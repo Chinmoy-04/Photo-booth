@@ -32,3 +32,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Cursor / local agent skills (not needed to run the app)
+.cursor/
+.agents/
+skills-lock.json
