@@ -23,6 +23,7 @@ import { CursorBloom } from "@/components/MagneticButton";
 import { useCountdown } from "@/hooks/useCountdown";
 import { captureDualFrame } from "@/lib/captureFrame";
 import { FILTER_PRESETS, type FilterKey } from "@/lib/filters";
+import { playShutterSound } from "@/lib/shutterSound";
 import {
   decodeRoomMessage,
   encodeFilterMessage,
@@ -292,6 +293,7 @@ function PhotoboothSession({
     const remoteVideo = remoteVideoRef.current;
 
     try {
+      playShutterSound();
       const dataUrl = captureDualFrame({
         localVideo,
         remoteVideo: partnerConnected ? remoteVideo : null,
@@ -319,8 +321,8 @@ function PhotoboothSession({
     <div className="relative z-[2] mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-secondary">
-            Shared atelier
+          <p className="font-display text-lg font-semibold uppercase tracking-[0.22em] text-secondary sm:text-xl sm:tracking-[0.26em]">
+            Happy Anniversary
           </p>
           <h1 className="mt-2 font-display text-2xl text-ink sm:text-3xl">
             Room: {room}
@@ -336,10 +338,10 @@ function PhotoboothSession({
             Session photos clear when everyone leaves
           </p>
         </div>
-        <div className="flex gap-4 text-sm">
+        <div className="flex flex-wrap gap-2 text-sm sm:gap-3">
           <Link
             href="/home"
-            className="text-xs uppercase tracking-[0.15em] text-secondary underline-offset-4 hover:underline"
+            className="rounded-sm border border-surface-border bg-[#FAF6F0]/95 px-3 py-2 text-xs uppercase tracking-[0.15em] text-secondary shadow-sm transition hover:border-secondary hover:bg-[#FAF6F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
           >
             Home
           </Link>
@@ -348,11 +350,11 @@ function PhotoboothSession({
             onClick={() => {
               void handleLeave();
             }}
-            className="text-xs uppercase tracking-[0.15em] text-secondary underline-offset-4 hover:underline"
+            className="rounded-sm border border-surface-border bg-[#FAF6F0]/95 px-3 py-2 text-xs uppercase tracking-[0.15em] text-secondary shadow-sm transition hover:border-secondary hover:bg-[#FAF6F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
           >
             Leave room
           </button>
-          <LogoutButton />
+          <LogoutButton className="rounded-sm border border-surface-border bg-[#FAF6F0]/95 px-3 py-2 text-xs uppercase tracking-[0.15em] text-secondary shadow-sm transition hover:border-secondary hover:bg-[#FAF6F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary disabled:opacity-50" />
         </div>
       </header>
 
@@ -386,7 +388,7 @@ function PhotoboothSession({
         </div>
       )}
 
-      <div className="antique-frame relative mb-6 p-2 sm:p-3">
+      <div className="relative mb-6">
         <DualCameraView
           localTrack={localTrack}
           remoteTrack={remoteTrack}
