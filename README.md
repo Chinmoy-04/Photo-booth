@@ -1,6 +1,6 @@
-# Anniversary Photobooth
+# Photobooth
 
-A private anniversary website with a **shared** in-browser photobooth. Two people join the same room, see each other's live camera feed, apply filters, capture photos together, and download from a gallery that syncs between both devices.
+A private website with a **shared** in-browser photobooth. Two people join the same room, see each other's live camera feed, apply filters, capture photos together, and download from a gallery that syncs between both devices.
 
 ## Features
 
@@ -61,7 +61,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ### 4. Use the shared photobooth
 
 1. Open **Open the photobooth**
-2. Enter your name and a room name (e.g. `anniversary`)
+2. Enter your name and a room name (e.g. `our-room`)
 3. **Copy the share link** and send it to your partner
 4. They open the same link, enter their name, and join
 5. Both of you see **You** and **Partner** camera tiles
@@ -75,7 +75,7 @@ Open [http://localhost:3000](http://localhost:3000).
 4. Add all environment variables from `.env.local.example`
 5. Deploy
 
-LiveKit and Blob both have free tiers sufficient for a personal anniversary session.
+LiveKit and Blob both have free tiers sufficient for a personal photobooth session.
 
 ## How shared photos work
 
@@ -102,12 +102,12 @@ Captured photos are stored in Vercel Blob under `photos/{room}/`. They persist f
 ## Privacy notes
 
 - Live video streams go through **LiveKit** (encrypted WebRTC)
-- Captured photos are stored in **Vercel Blob** (public URLs within the room — suitable for a private gift site behind your passphrase gate, not for highly sensitive content)
+- Captured photos are stored in **Vercel Blob** (public URLs within the room — suitable for a private site behind your passphrase gate, not for highly sensitive content)
 - The optional passphrase gate is a lightweight deterrent, not bank-grade security
 
 ## Customization
 
-- **Frame overlay:** Replace `public/overlays/anniversary-frame.png`
+- **Frame overlay:** Replace `public/overlays/frame-ornate.svg`
 - **Landing copy:** Edit `src/app/page.tsx`
 - **Filter presets:** Edit `src/lib/filters.ts`
 
