@@ -28,7 +28,9 @@ export function createSessionId(): string {
 export type RoomSyncMessage =
   | { type: "photo_added"; url: string }
   | { type: "session_cleared" }
-  | { type: "filter_changed"; filter: FilterKey };
+  | { type: "filter_changed"; filter: FilterKey }
+  | { type: "capture_request"; captureId: string }
+  | { type: "capture_tile"; captureId: string; url: string };
 
 function encodeJson(payload: RoomSyncMessage): Uint8Array<ArrayBuffer> {
   const encoded = new TextEncoder().encode(JSON.stringify(payload));
@@ -47,6 +49,26 @@ export function encodeFilterMessage(filter: FilterKey): Uint8Array<ArrayBuffer> 
   return encodeJson({ type: "filter_changed", filter });
 }
 
+export function encodeCaptureRequestMessage(
+  captureId: string
+): Uint8Array<ArrayBuffer> {
+  return encodeJson({ type: "capture_request", captureId });
+}
+
+export function encodeCaptureTileMessage(
+  captureId: string,
+  url: string
+): Uint8Array<ArrayBuffer> {
+  return encodeJson({ type: "capture_tile", captureId, url });
+}
+
+export function createCaptureId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  }
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function isFilterKey(value: unknown): value is FilterKey {
   return typeof value === "string" && value in FILTER_PRESETS;
 }
@@ -61,6 +83,19 @@ export function decodeRoomMessage(data: Uint8Array): RoomSyncMessage | null {
       return parsed;
     }
     if (parsed?.type === "filter_changed" && isFilterKey(parsed.filter)) {
+      return parsed;
+    }
+    if (
+      parsed?.type === "capture_request" &&
+      typeof parsed.captureId === "string"
+    ) {
+      return parsed;
+    }
+    if (
+      parsed?.type === "capture_tile" &&
+      typeof parsed.captureId === "string" &&
+      typeof parsed.url === "string"
+    ) {
       return parsed;
     }
     return null;

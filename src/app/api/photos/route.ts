@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     });
 
     const photos = blobs
+      .filter((blob) => !blob.pathname.includes("/tiles/"))
       .map((blob) => blob.url)
       .sort((a, b) => b.localeCompare(a));
 
@@ -57,11 +58,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing photo file." }, { status: 400 });
     }
 
-    const blob = await put(`sessions/${session}/${Date.now()}.png`, file, {
+    const captureId = sanitizeSessionId(
+      (formData.get("captureId") as string | null) ?? ""
+    );
+    const isTile = formData.get("kind") === "tile" && captureId;
+    const pathname = isTile
+      ? `sessions/${session}/tiles/${captureId}.jpg`
+      : `sessions/${session}/${Date.now()}.png`;
+
+    const blob = await put(pathname, file, {
       access: "public",
       token: getBlobToken(),
-      contentType: "image/png",
-      addRandomSuffix: true,
+      contentType: isTile ? "image/jpeg" : "image/png",
+      addRandomSuffix: !isTile,
     });
 
     return NextResponse.json({ url: blob.url });
