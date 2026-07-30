@@ -215,12 +215,11 @@ export function composeDualFromImages({
   return canvas.toDataURL("image/png");
 }
 
-export function loadImageFromUrl(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("Could not load snapshot image"));
-    img.src = url;
-  });
+export async function loadBitmapFromUrl(url: string): Promise<ImageBitmap> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Could not load snapshot image");
+  }
+  const blob = await response.blob();
+  return createImageBitmap(blob);
 }

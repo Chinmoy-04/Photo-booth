@@ -21,14 +21,14 @@ import { Gallery } from "@/components/Gallery";
 import { LogoutButton } from "@/components/LogoutButton";
 import { CursorBloom } from "@/components/MagneticButton";
 import { useCountdown } from "@/hooks/useCountdown";
-import { captureDualFrame, captureLocalSnapshot, composeDualFromImages, loadImageFromUrl } from "@/lib/captureFrame";
+import { captureDualFrame, captureLocalSnapshot, composeDualFromImages, loadBitmapFromUrl } from "@/lib/captureFrame";
 import { FILTER_PRESETS, type FilterKey } from "@/lib/filters";
 import { playShutterSound } from "@/lib/shutterSound";
 import {
   createCaptureId,
   decodeRoomMessage,
+  encodeCaptureFailedMessage,
   encodeCaptureRequestMessage,
-  encodeCaptureTileMessage,
   encodeFilterMessage,
   encodePhotoMessage,
   encodeSessionClearedMessage,
@@ -95,6 +95,7 @@ function PhotoboothSession({
       string,
       {
         resolve: (url: string) => void;
+        reject: (error: Error) => void;
         timeoutId: ReturnType<typeof setTimeout>;
       }
     >()
@@ -175,44 +176,101 @@ function PhotoboothSession({
   }, [fetchSessionPhotos]);
 
   useEffect(() => {
-    const uploadPartnerTile = async (captureId: string) => {
-      const localVideo = localVideoRef.current;
-      if (!localVideo) return;
+    const waitForVideo = async (video: HTMLVideoElement | null) => {
+      if (!video) return null;
+      for (let i = 0; i < 10; i++) {
+        if (video.videoWidth > 0 && video.videoHeight > 0) return video;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      return video.videoWidth > 0 ? video : null;
+    };
 
+    const fulfillCapture = (captureId: string, url: string) => {
+      const pending = pendingTilesRef.current.get(captureId);
+      if (!pending) return;
+      clearTimeout(pending.timeoutId);
+      pendingTilesRef.current.delete(captureId);
+      pending.resolve(url);
+    };
+
+    const failCapture = (captureId: string, reason: string) => {
+      const pending = pendingTilesRef.current.get(captureId);
+      if (!pending) return;
+      clearTimeout(pending.timeoutId);
+      pendingTilesRef.current.delete(captureId);
+      pending.reject(new Error(reason));
+    };
+
+    /** Partner builds the final photo so phones never canvas-read remote WebRTC. */
+    const handleCaptureRequest = async (
+      captureId: string,
+      initiatorTileUrl: string
+    ) => {
       try {
         playShutterSound();
-        const dataUrl = captureLocalSnapshot(localVideo, {
+        const localVideo = await waitForVideo(localVideoRef.current);
+        if (!localVideo) {
+          throw new Error("Partner camera is not ready");
+        }
+
+        const partnerSnapshot = captureLocalSnapshot(localVideo, {
           filterCss: FILTER_PRESETS[filterKeyRef.current],
           mirror: true,
         });
-        const blob = await (await fetch(dataUrl)).blob();
+
+        const [initiatorImage, partnerImage, overlay] = await Promise.all([
+          loadBitmapFromUrl(initiatorTileUrl),
+          loadBitmapFromUrl(partnerSnapshot),
+          loadOverlayImage(OVERLAY_REGISTRY[DEFAULT_OVERLAY]).catch(() => null),
+        ]);
+
+        const framed = composeDualFromImages({
+          localImage: initiatorImage,
+          remoteImage: partnerImage,
+          overlayImage: overlay,
+        });
+
+        const blob = await (await fetch(framed)).blob();
         const formData = new FormData();
-        formData.append("file", blob, `tile-${captureId}.jpg`);
+        formData.append("file", blob, `anniversary-${Date.now()}.png`);
         formData.append("session", sessionId);
-        formData.append("kind", "tile");
-        formData.append("captureId", captureId);
 
         const response = await fetch("/api/photos", {
           method: "POST",
           body: formData,
         });
-        if (!response.ok) return;
+        if (!response.ok) throw new Error("Final upload failed");
 
         const { url } = (await response.json()) as { url: string };
+        setPhotos((prev) => addPhotoUnique(prev, url));
         await roomContext.localParticipant.publishData(
-          encodeCaptureTileMessage(captureId, url),
+          encodePhotoMessage(url, captureId),
           { reliable: true }
         );
-      } catch {
-        /* initiator will time out and fall back */
+      } catch (error) {
+        const reason =
+          error instanceof Error ? error.message : "Partner capture failed";
+        try {
+          await roomContext.localParticipant.publishData(
+            encodeCaptureFailedMessage(captureId, reason),
+            { reliable: true }
+          );
+        } catch {
+          /* initiator will time out */
+        }
       }
     };
 
     const handleData = (payload: Uint8Array) => {
-      const message = decodeRoomMessage(payload);
+      const message = decodeRoomMessage(
+        payload instanceof Uint8Array ? payload : new Uint8Array(payload)
+      );
       if (!message) return;
       if (message.type === "photo_added") {
         setPhotos((prev) => addPhotoUnique(prev, message.url));
+        if (message.captureId) {
+          fulfillCapture(message.captureId, message.url);
+        }
       }
       if (message.type === "session_cleared") {
         setPhotos([]);
@@ -221,15 +279,13 @@ function PhotoboothSession({
         setFilterKey(message.filter);
       }
       if (message.type === "capture_request") {
-        void uploadPartnerTile(message.captureId);
+        void handleCaptureRequest(
+          message.captureId,
+          message.initiatorTileUrl
+        );
       }
-      if (message.type === "capture_tile") {
-        const pending = pendingTilesRef.current.get(message.captureId);
-        if (pending) {
-          clearTimeout(pending.timeoutId);
-          pendingTilesRef.current.delete(message.captureId);
-          pending.resolve(message.url);
-        }
+      if (message.type === "capture_failed") {
+        failCapture(message.captureId, message.reason);
       }
     };
 
@@ -348,21 +404,42 @@ function PhotoboothSession({
     [sessionId, roomContext]
   );
 
-  const waitForPartnerTile = useCallback((captureId: string) => {
+  const waitForPartnerPhoto = useCallback((captureId: string) => {
     return new Promise<string>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         pendingTilesRef.current.delete(captureId);
-        reject(new Error("Partner snapshot timed out"));
-      }, 5000);
+        reject(new Error("Partner did not finish the photo in time"));
+      }, 15000);
 
-      pendingTilesRef.current.set(captureId, { resolve, timeoutId });
+      pendingTilesRef.current.set(captureId, { resolve, reject, timeoutId });
     });
   }, []);
+
+  const uploadInitiatorTile = useCallback(
+    async (dataUrl: string, captureId: string) => {
+      const blob = await (await fetch(dataUrl)).blob();
+      const formData = new FormData();
+      formData.append("file", blob, `tile-${captureId}.jpg`);
+      formData.append("session", sessionId);
+      formData.append("kind", "tile");
+      formData.append("captureId", `${captureId}init`);
+
+      const response = await fetch("/api/photos", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error("Could not upload your snapshot");
+      }
+      const { url } = (await response.json()) as { url: string };
+      return url;
+    },
+    [sessionId]
+  );
 
   const handleCaptureComplete = useCallback(() => {
     void (async () => {
       const localVideo = localVideoRef.current;
-      const remoteVideo = remoteVideoRef.current;
 
       try {
         playShutterSound();
@@ -382,52 +459,34 @@ function PhotoboothSession({
         }
 
         if (!localVideo || localVideo.videoWidth <= 0) {
-          throw new Error("Local camera is not ready");
+          throw new Error("Your camera is not ready");
         }
 
         const captureId = createCaptureId();
-        const partnerTilePromise = waitForPartnerTile(captureId);
+        const photoPromise = waitForPartnerPhoto(captureId);
         const localSnapshot = captureLocalSnapshot(localVideo, {
           filterCss: FILTER_PRESETS[filterKey],
           mirror: true,
         });
+        const initiatorTileUrl = await uploadInitiatorTile(
+          localSnapshot,
+          captureId
+        );
 
         await roomContext.localParticipant.publishData(
-          encodeCaptureRequestMessage(captureId),
+          encodeCaptureRequestMessage(captureId, initiatorTileUrl),
           { reliable: true }
         );
 
-        let partnerImage: HTMLImageElement;
-        try {
-          const partnerUrl = await partnerTilePromise;
-          partnerImage = await loadImageFromUrl(partnerUrl);
-        } catch {
-          // Desktop can often still read the remote WebRTC frame; phones usually cannot.
-          if (remoteVideo && remoteVideo.videoWidth > 0) {
-            const fallback = captureDualFrame({
-              localVideo,
-              remoteVideo,
-              overlayImage,
-              filterCss: FILTER_PRESETS[filterKey],
-              localMirror: true,
-            });
-            await uploadAndSharePhoto(fallback);
-            return;
-          }
-          throw new Error("Partner snapshot unavailable");
-        }
-
-        const localImage = await loadImageFromUrl(localSnapshot);
-        const dataUrl = composeDualFromImages({
-          localImage,
-          remoteImage: partnerImage,
-          overlayImage,
-        });
-        await uploadAndSharePhoto(dataUrl);
-      } catch {
+        const finalUrl = await photoPromise;
+        setPhotos((prev) => addPhotoUnique(prev, finalUrl));
+        setIsUploading(false);
+      } catch (error) {
         setIsUploading(false);
         setCaptureError(
-          "Could not capture photo. Make sure both cameras are ready."
+          error instanceof Error
+            ? error.message
+            : "Could not capture photo. Make sure both cameras are ready."
         );
       }
     })();
@@ -437,7 +496,8 @@ function PhotoboothSession({
     partnerConnected,
     uploadAndSharePhoto,
     roomContext,
-    waitForPartnerTile,
+    waitForPartnerPhoto,
+    uploadInitiatorTile,
   ]);
 
   const handleCapture = useCallback(() => {

@@ -26,19 +26,26 @@ export function createSessionId(): string {
 }
 
 export type RoomSyncMessage =
-  | { type: "photo_added"; url: string }
+  | { type: "photo_added"; url: string; captureId?: string }
   | { type: "session_cleared" }
   | { type: "filter_changed"; filter: FilterKey }
-  | { type: "capture_request"; captureId: string }
-  | { type: "capture_tile"; captureId: string; url: string };
+  | { type: "capture_request"; captureId: string; initiatorTileUrl: string }
+  | { type: "capture_failed"; captureId: string; reason: string };
 
 function encodeJson(payload: RoomSyncMessage): Uint8Array<ArrayBuffer> {
   const encoded = new TextEncoder().encode(JSON.stringify(payload));
   return new Uint8Array(encoded.buffer.slice(0));
 }
 
-export function encodePhotoMessage(url: string): Uint8Array<ArrayBuffer> {
-  return encodeJson({ type: "photo_added", url });
+export function encodePhotoMessage(
+  url: string,
+  captureId?: string
+): Uint8Array<ArrayBuffer> {
+  return encodeJson(
+    captureId
+      ? { type: "photo_added", url, captureId }
+      : { type: "photo_added", url }
+  );
 }
 
 export function encodeSessionClearedMessage(): Uint8Array<ArrayBuffer> {
@@ -50,16 +57,17 @@ export function encodeFilterMessage(filter: FilterKey): Uint8Array<ArrayBuffer> 
 }
 
 export function encodeCaptureRequestMessage(
-  captureId: string
+  captureId: string,
+  initiatorTileUrl: string
 ): Uint8Array<ArrayBuffer> {
-  return encodeJson({ type: "capture_request", captureId });
+  return encodeJson({ type: "capture_request", captureId, initiatorTileUrl });
 }
 
-export function encodeCaptureTileMessage(
+export function encodeCaptureFailedMessage(
   captureId: string,
-  url: string
+  reason: string
 ): Uint8Array<ArrayBuffer> {
-  return encodeJson({ type: "capture_tile", captureId, url });
+  return encodeJson({ type: "capture_failed", captureId, reason });
 }
 
 export function createCaptureId(): string {
@@ -77,6 +85,12 @@ export function decodeRoomMessage(data: Uint8Array): RoomSyncMessage | null {
   try {
     const parsed = JSON.parse(new TextDecoder().decode(data)) as RoomSyncMessage;
     if (parsed?.type === "photo_added" && typeof parsed.url === "string") {
+      if (
+        parsed.captureId !== undefined &&
+        typeof parsed.captureId !== "string"
+      ) {
+        return null;
+      }
       return parsed;
     }
     if (parsed?.type === "session_cleared") {
@@ -87,14 +101,15 @@ export function decodeRoomMessage(data: Uint8Array): RoomSyncMessage | null {
     }
     if (
       parsed?.type === "capture_request" &&
-      typeof parsed.captureId === "string"
+      typeof parsed.captureId === "string" &&
+      typeof parsed.initiatorTileUrl === "string"
     ) {
       return parsed;
     }
     if (
-      parsed?.type === "capture_tile" &&
+      parsed?.type === "capture_failed" &&
       typeof parsed.captureId === "string" &&
-      typeof parsed.url === "string"
+      typeof parsed.reason === "string"
     ) {
       return parsed;
     }

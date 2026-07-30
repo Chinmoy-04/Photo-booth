@@ -63,14 +63,14 @@ export async function POST(request: NextRequest) {
     );
     const isTile = formData.get("kind") === "tile" && captureId;
     const pathname = isTile
-      ? `sessions/${session}/tiles/${captureId}.jpg`
+      ? `sessions/${session}/tiles/${captureId}-${Date.now()}.jpg`
       : `sessions/${session}/${Date.now()}.png`;
 
     const blob = await put(pathname, file, {
       access: "public",
       token: getBlobToken(),
       contentType: isTile ? "image/jpeg" : "image/png",
-      addRandomSuffix: !isTile,
+      addRandomSuffix: true,
     });
 
     return NextResponse.json({ url: blob.url });
