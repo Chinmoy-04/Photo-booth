@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
   }
 
   const room =
-    sanitizeRoomName(request.nextUrl.searchParams.get("room") ?? "anniversary") ||
-    "anniversary";
+    sanitizeRoomName(request.nextUrl.searchParams.get("room") ?? "photobooth") ||
+    "photobooth";
   const identity =
     request.nextUrl.searchParams.get("name")?.trim().slice(0, 32) ||
     `guest-${Math.random().toString(36).slice(2, 8)}`;

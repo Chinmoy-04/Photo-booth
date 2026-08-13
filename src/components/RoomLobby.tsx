@@ -17,7 +17,7 @@ interface RoomLobbyProps {
 }
 
 export function RoomLobby({
-  initialRoom = "anniversary",
+  initialRoom = "photobooth",
   initialSession,
   onJoin,
 }: RoomLobbyProps) {
@@ -31,7 +31,7 @@ export function RoomLobby({
 
   const shareUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
-    const safeRoom = sanitizeRoomName(room) || "anniversary";
+    const safeRoom = sanitizeRoomName(room) || "photobooth";
     const params = new URLSearchParams({
       room: safeRoom,
       session: sessionId,
@@ -41,7 +41,7 @@ export function RoomLobby({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const safeRoom = sanitizeRoomName(room) || "anniversary";
+    const safeRoom = sanitizeRoomName(room) || "photobooth";
     const displayName = name.trim() || "Guest";
     onJoin(safeRoom, displayName, sessionId);
   }
@@ -80,7 +80,7 @@ export function RoomLobby({
             className="font-display text-sm uppercase tracking-[0.3em] text-secondary"
             variants={fadeUp}
           >
-            Shared atelier
+            Live session
           </motion.p>
           <motion.h2
             className="mt-3 font-display text-3xl text-ink"
@@ -97,7 +97,7 @@ export function RoomLobby({
             className="mt-4 text-sm leading-relaxed text-ink-muted"
             variants={fadeUp}
           >
-            Copy the share link below so you both join the same session. Photos
+            Copy the share link below so everyone joins the same session. Photos
             from this session are cleared when the last person leaves.
           </motion.p>
 
@@ -113,7 +113,7 @@ export function RoomLobby({
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. You"
+                placeholder="e.g. Alex"
                 className="field-input"
               />
             </label>
@@ -125,7 +125,7 @@ export function RoomLobby({
               <input
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
-                placeholder="anniversary"
+                placeholder="demo-room"
                 required
                 className="field-input"
               />
@@ -141,11 +141,11 @@ export function RoomLobby({
             variants={fadeUp}
           >
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-secondary">
-              Share with your partner
+              Share link
             </p>
             <p className="mt-2 break-all text-sm text-ink-muted">{shareUrl}</p>
             <p className="mt-2 text-xs text-ink-soft">
-              Session {sessionId.slice(0, 8)}… · photos only for this meet-up
+              Session {sessionId.slice(0, 8)}… · photos only for this session
             </p>
             <button
               type="button"

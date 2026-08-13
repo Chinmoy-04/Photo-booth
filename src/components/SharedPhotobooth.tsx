@@ -39,7 +39,7 @@ import {
   type OverlayKey,
 } from "@/lib/overlays";
 
-const DEFAULT_OVERLAY: OverlayKey = "anniversary";
+const DEFAULT_OVERLAY: OverlayKey = "ornate";
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? "";
 
 function getCameraHelpMessage(): string | null {
@@ -232,7 +232,7 @@ function PhotoboothSession({
 
         const blob = await (await fetch(framed)).blob();
         const formData = new FormData();
-        formData.append("file", blob, `anniversary-${Date.now()}.png`);
+        formData.append("file", blob, `photobooth-${Date.now()}.png`);
         formData.append("session", sessionId);
 
         const response = await fetch("/api/photos", {
@@ -249,7 +249,7 @@ function PhotoboothSession({
         );
       } catch (error) {
         const reason =
-          error instanceof Error ? error.message : "Partner capture failed";
+          error instanceof Error ? error.message : "Guest capture failed";
         try {
           await roomContext.localParticipant.publishData(
             encodeCaptureFailedMessage(captureId, reason),
@@ -299,7 +299,7 @@ function PhotoboothSession({
     };
   }, [roomContext, sessionId]);
 
-  /** When a partner joins, share the current filter so both start matched. */
+  /** When a guest joins, share the current filter so both start matched. */
   useEffect(() => {
     if (!partnerConnected || !isConnected) return;
 
@@ -374,7 +374,7 @@ function PhotoboothSession({
       try {
         const blob = await (await fetch(dataUrl)).blob();
         const formData = new FormData();
-        formData.append("file", blob, `anniversary-${Date.now()}.png`);
+        formData.append("file", blob, `photobooth-${Date.now()}.png`);
         formData.append("session", sessionId);
 
         const response = await fetch("/api/photos", {
@@ -510,7 +510,7 @@ function PhotoboothSession({
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="font-display text-lg font-semibold uppercase tracking-[0.22em] text-secondary sm:text-xl sm:tracking-[0.26em]">
-            Happy Anniversary
+            Photobooth
           </p>
           <h1 className="mt-2 font-display text-2xl text-ink sm:text-3xl">
             Room: {room}
@@ -519,8 +519,8 @@ function PhotoboothSession({
             You&apos;re connected as{" "}
             <span className="font-medium text-ink">{identity}</span>
             {partnerConnected
-              ? " · Partner connected"
-              : " · Waiting for partner…"}
+              ? " · Guest connected"
+              : " · Waiting for guest…"}
           </p>
           <p className="mt-1 text-xs uppercase tracking-[0.14em] text-ink-soft">
             Session photos clear when everyone leaves
@@ -605,7 +605,7 @@ function PhotoboothSession({
         />
         {isUploading && (
           <p className="text-center text-sm text-secondary">
-            Sharing photo with your partner…
+            Sharing photo…
           </p>
         )}
       </div>
@@ -613,7 +613,7 @@ function PhotoboothSession({
       <Gallery
         photos={photos}
         shared
-        emptyMessage="Photos from this session appear here for both of you. Download any you want to keep — they are cleared when the last person leaves."
+        emptyMessage="Photos from this session appear here for everyone in the room. Download any you want to keep — they are cleared when the last person leaves."
       />
     </div>
   );

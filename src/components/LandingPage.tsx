@@ -83,12 +83,12 @@ export function LandingPage() {
                   className="font-display text-sm uppercase tracking-[0.35em] text-secondary"
                   variants={fadeUp}
                 >
-                  Est. for us
+                  Shared session
                 </motion.p>
 
                 <motion.div variants={fadeUp} className="mt-6">
                   <TextReveal
-                    text="Ours"
+                    text="Photobooth"
                     className="font-display text-5xl font-medium leading-none text-ink sm:text-6xl md:text-7xl"
                   />
                 </motion.div>
@@ -118,14 +118,14 @@ export function LandingPage() {
                   className="mx-auto mt-6 max-w-md text-balance font-display text-2xl font-normal italic leading-snug text-ink-muted sm:text-3xl"
                   variants={fadeUp}
                 >
-                  A little photobooth.
+                  Capture moments together, live.
                 </motion.h1>
 
                 <motion.p
                   className="mx-auto mt-5 max-w-sm text-balance text-sm leading-relaxed tracking-wide text-ink-soft sm:text-base"
                   variants={fadeUp}
                 >
-                  Because we never got to use one
+                  Join a room, sync filters, and save shared photos from any device.
                 </motion.p>
 
                 <motion.div
@@ -149,7 +149,7 @@ export function LandingPage() {
                     Open the photobooth
                   </MotionLink>
                   <p className="text-xs uppercase tracking-[0.2em] text-ink-soft">
-                    Camera access MANDATORY
+                    Camera access required
                   </p>
                 </motion.div>
               </motion.div>

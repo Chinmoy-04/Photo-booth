@@ -20,8 +20,8 @@ export function Gallery({
       <div className="rounded-sm border border-dashed border-surface-border bg-[#FAF6F0]/50 p-8 text-center text-sm text-ink-muted">
         {emptyMessage ??
           (shared
-            ? "Portraits you take together will appear here for both of you to download."
-            : "Your session portraits will appear here.")}
+            ? "Photos you take together will appear here for everyone to download."
+            : "Your session photos will appear here.")}
       </div>
     );
   }
@@ -50,7 +50,7 @@ export function Gallery({
           >
             <img
               src={photo}
-              alt={`Captured portrait ${index + 1}`}
+              alt={`Captured photo ${index + 1}`}
               className="aspect-[7/6] w-full object-cover"
             />
             <div className="p-2">
@@ -59,7 +59,7 @@ export function Gallery({
                 onClick={() => {
                   void downloadImage(
                     photo,
-                    `anniversary-photo-${Date.now()}.png`
+                    `photobooth-photo-${Date.now()}.png`
                   );
                 }}
                 className="w-full cursor-pointer rounded-sm border border-surface-border py-2 text-xs font-medium uppercase tracking-[0.12em] text-ink transition duration-200 hover:border-secondary hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"

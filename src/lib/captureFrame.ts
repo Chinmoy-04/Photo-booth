@@ -5,7 +5,7 @@ interface CaptureOptions {
   mirror?: boolean;
 }
 
-/** Dual portrait print size — slightly wider than square for two side-by-side tiles. */
+/** Dual print size — slightly wider than square for two side-by-side tiles. */
 export const CAPTURE_WIDTH = 1400;
 export const CAPTURE_HEIGHT = 1200;
 

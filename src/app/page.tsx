@@ -75,13 +75,13 @@ export default function GateHomePage() {
                   className="font-display text-sm uppercase tracking-[0.3em] text-secondary"
                   variants={fadeUp}
                 >
-                  Private
+                  Welcome
                 </motion.p>
                 <motion.h1
                   className="mt-3 font-display text-3xl text-ink"
                   variants={fadeUp}
                 >
-                  Ours
+                  Photobooth
                 </motion.h1>
                 <motion.div
                   aria-hidden

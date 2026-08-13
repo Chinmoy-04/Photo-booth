@@ -17,9 +17,9 @@ const sourceSans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "Ours — Anniversary Photobooth",
+  title: "Photobooth",
   description:
-    "A private photobooth made with love — capture memories together, live.",
+    "A shared in-browser photobooth — join a room, capture photos together, live.",
 };
 
 export default function RootLayout({

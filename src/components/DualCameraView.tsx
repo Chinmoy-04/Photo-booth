@@ -68,7 +68,7 @@ export function DualCameraView({
 
         <div className="relative min-h-0 min-w-0 overflow-hidden bg-black">
           <span className="absolute left-2 top-2 z-10 rounded-sm bg-black/55 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-white sm:left-3 sm:top-3 sm:text-xs">
-            Partner
+            Guest
           </span>
           {partnerConnected ? (
             <video
@@ -81,7 +81,7 @@ export function DualCameraView({
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-white/70">
-              Waiting for your partner to join…
+              Waiting for someone to join…
             </div>
           )}
         </div>

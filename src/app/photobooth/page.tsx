@@ -20,7 +20,7 @@ type SessionState = {
 function PhotoboothContent() {
   const searchParams = useSearchParams();
   const initialRoom = sanitizeRoomName(
-    searchParams.get("room") ?? "anniversary"
+    searchParams.get("room") ?? "photobooth"
   );
   const initialSession = sanitizeSessionId(searchParams.get("session") ?? "");
 

@@ -1,5 +1,5 @@
 export const OVERLAY_REGISTRY = {
-  anniversary: "/overlays/frame-ornate.svg",
+  ornate: "/overlays/frame-ornate.svg",
 } as const;
 
 export type OverlayKey = keyof typeof OVERLAY_REGISTRY;
